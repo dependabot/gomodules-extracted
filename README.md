@@ -1,6 +1,6 @@
 # Go modules internals
 
-The internals of Go modules, extracted from github.com/golang/go. All
+The internals of Go modules, extracted from [golang/go](https://github.com/golang/go). All
 occurrences of `internal` in import paths have been rewritten to `_internal_`,
 but the code is otherwise unchanged.
 
