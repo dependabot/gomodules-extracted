@@ -3,6 +3,7 @@
 package cfg
 
 var OSArchSupportsCgo = map[string]bool{
+	"aix/ppc64":		false,
 	"android/386":		true,
 	"android/amd64":	true,
 	"android/arm":		true,
@@ -28,6 +29,7 @@ var OSArchSupportsCgo = map[string]bool{
 	"linux/ppc64le":	true,
 	"linux/riscv64":	true,
 	"linux/s390x":		true,
+	"linux/sparc64":	true,
 	"nacl/386":		false,
 	"nacl/amd64p32":	false,
 	"nacl/arm":		false,
@@ -36,11 +38,12 @@ var OSArchSupportsCgo = map[string]bool{
 	"netbsd/arm":		true,
 	"openbsd/386":		true,
 	"openbsd/amd64":	true,
-	"openbsd/arm":		false,
+	"openbsd/arm":		true,
 	"plan9/386":		false,
 	"plan9/amd64":		false,
 	"plan9/arm":		false,
 	"solaris/amd64":	true,
 	"windows/386":		true,
 	"windows/amd64":	true,
+	"windows/arm":		false,
 }
