@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -24,4 +25,6 @@ func main() {
 	if err := extractor.Run(); err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println("!!! Remember to copy the LICENSE across - https://github.com/golang/go/blob/master/LICENSE")
 }
