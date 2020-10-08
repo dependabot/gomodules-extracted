@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/dependabot/gomodules-extracted/cmd/go/_internal_/base"
+	"github.com/dependabot/gomodules-extracted/cmd/go/_internal_/cfg"
 )
 
 // Default returns the default cache to use, or nil if no cache should be used.
@@ -73,7 +74,7 @@ func DefaultDir() string {
 	// otherwise distinguish between an explicit "off" and a UserCacheDir error.
 
 	defaultDirOnce.Do(func() {
-		defaultDir = os.Getenv("GOCACHE")
+		defaultDir = cfg.Getenv("GOCACHE")
 		if filepath.IsAbs(defaultDir) || defaultDir == "off" {
 			return
 		}

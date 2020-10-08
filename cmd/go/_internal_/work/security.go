@@ -30,17 +30,20 @@
 package work
 
 import (
-	"github.com/dependabot/gomodules-extracted/cmd/go/_internal_/load"
 	"fmt"
-	"os"
+	"github.com/dependabot/gomodules-extracted/_internal_/lazyregexp"
 	"regexp"
 	"strings"
+
+	"github.com/dependabot/gomodules-extracted/cmd/go/_internal_/cfg"
+	"github.com/dependabot/gomodules-extracted/cmd/go/_internal_/load"
 )
 
-var re = regexp.MustCompile
+var re = lazyregexp.New
 
-var validCompilerFlags = []*regexp.Regexp{
+var validCompilerFlags = []*lazyregexp.Regexp{
 	re(`-D([A-Za-z_].*)`),
+	re(`-U([A-Za-z_]*)`),
 	re(`-F([^@\-].*)`),
 	re(`-I([^@\-].*)`),
 	re(`-O`),
@@ -49,6 +52,7 @@ var validCompilerFlags = []*regexp.Regexp{
 	re(`-W([^@,]+)`),	// -Wall but not -Wa,-foo.
 	re(`-Wa,-mbig-obj`),
 	re(`-Wp,-D([A-Za-z_].*)`),
+	re(`-Wp,-U([A-Za-z_]*)`),
 	re(`-ansi`),
 	re(`-f(no-)?asynchronous-unwind-tables`),
 	re(`-f(no-)?blocks`),
@@ -100,6 +104,10 @@ var validCompilerFlags = []*regexp.Regexp{
 	re(`-mmacosx-(.+)`),
 	re(`-mios-simulator-version-min=(.+)`),
 	re(`-miphoneos-version-min=(.+)`),
+	re(`-mtvos-simulator-version-min=(.+)`),
+	re(`-mtvos-version-min=(.+)`),
+	re(`-mwatchos-simulator-version-min=(.+)`),
+	re(`-mwatchos-version-min=(.+)`),
 	re(`-mnop-fun-dllimport`),
 	re(`-m(no-)?sse[0-9.]*`),
 	re(`-m(no-)?ssse3`),
@@ -121,6 +129,7 @@ var validCompilerFlags = []*regexp.Regexp{
 var validCompilerFlagsWithNextArg = []string{
 	"-arch",
 	"-D",
+	"-U",
 	"-I",
 	"-framework",
 	"-isysroot",
@@ -130,7 +139,7 @@ var validCompilerFlagsWithNextArg = []string{
 	"-x",
 }
 
-var validLinkerFlags = []*regexp.Regexp{
+var validLinkerFlags = []*lazyregexp.Regexp{
 	re(`-F([^@\-].*)`),
 	re(`-l([^@\-].*)`),
 	re(`-L([^@\-].*)`),
@@ -166,6 +175,7 @@ var validLinkerFlags = []*regexp.Regexp{
 	re(`-Wl,--(no-)?allow-shlib-undefined`),
 	re(`-Wl,--(no-)?as-needed`),
 	re(`-Wl,-Bdynamic`),
+	re(`-Wl,-berok`),
 	re(`-Wl,-Bstatic`),
 	re(`-WL,-O([^@,\-][^,]*)?`),
 	re(`-Wl,-d[ny]`),
@@ -174,9 +184,13 @@ var validLinkerFlags = []*regexp.Regexp{
 	re(`-Wl,--enable-new-dtags`),
 	re(`-Wl,--end-group`),
 	re(`-Wl,--(no-)?export-dynamic`),
+	re(`-Wl,-E`),
 	re(`-Wl,-framework,[^,@\-][^,]+`),
+	re(`-Wl,--hash-style=(sysv|gnu|both)`),
 	re(`-Wl,-headerpad_max_install_names`),
 	re(`-Wl,--no-undefined`),
+	re(`-Wl,-R([^@\-][^,@]*$)`),
+	re(`-Wl,--just-symbols[=,]([^,@\-][^,@]+)`),
 	re(`-Wl,-rpath(-link)?[=,]([^,@\-][^,]+)`),
 	re(`-Wl,-s`),
 	re(`-Wl,-search_paths_first`),
@@ -188,6 +202,7 @@ var validLinkerFlags = []*regexp.Regexp{
 	re(`-Wl,-undefined[=,]([^,@\-][^,]+)`),
 	re(`-Wl,-?-unresolved-symbols=[^,]+`),
 	re(`-Wl,--(no-)?warn-([^,]+)`),
+	re(`-Wl,-?-wrap[=,][^,@\-][^,]*`),
 	re(`-Wl,-z,(no)?execstack`),
 	re(`-Wl,-z,relro`),
 
@@ -206,6 +221,8 @@ var validLinkerFlagsWithNextArg = []string{
 	"-target",
 	"-Wl,-framework",
 	"-Wl,-rpath",
+	"-Wl,-R",
+	"-Wl,--just-symbols",
 	"-Wl,-undefined",
 }
 
@@ -217,20 +234,20 @@ func checkLinkerFlags(name, source string, list []string) error {
 	return checkFlags(name, source, list, validLinkerFlags, validLinkerFlagsWithNextArg)
 }
 
-func checkFlags(name, source string, list []string, valid []*regexp.Regexp, validNext []string) error {
+func checkFlags(name, source string, list []string, valid []*lazyregexp.Regexp, validNext []string) error {
 	// Let users override rules with $CGO_CFLAGS_ALLOW, $CGO_CFLAGS_DISALLOW, etc.
 	var (
 		allow		*regexp.Regexp
 		disallow	*regexp.Regexp
 	)
-	if env := os.Getenv("CGO_" + name + "_ALLOW"); env != "" {
+	if env := cfg.Getenv("CGO_" + name + "_ALLOW"); env != "" {
 		r, err := regexp.Compile(env)
 		if err != nil {
 			return fmt.Errorf("parsing $CGO_%s_ALLOW: %v", name, err)
 		}
 		allow = r
 	}
-	if env := os.Getenv("CGO_" + name + "_DISALLOW"); env != "" {
+	if env := cfg.Getenv("CGO_" + name + "_DISALLOW"); env != "" {
 		r, err := regexp.Compile(env)
 		if err != nil {
 			return fmt.Errorf("parsing $CGO_%s_DISALLOW: %v", name, err)
@@ -267,6 +284,15 @@ Args:
 					!strings.Contains(list[i+1][4:], ",") {
 					i++
 					continue Args
+				}
+
+				// Permit -I= /path, -I $SYSROOT.
+				if i+1 < len(list) && arg == "-I" {
+					if (strings.HasPrefix(list[i+1], "=") || strings.HasPrefix(list[i+1], "$SYSROOT")) &&
+						load.SafeArg(list[i+1][1:]) {
+						i++
+						continue Args
+					}
 				}
 
 				if i+1 < len(list) {
