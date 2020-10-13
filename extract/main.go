@@ -26,5 +26,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("!!! Remember to copy the LICENSE across - https://github.com/golang/go/blob/master/LICENSE")
+	fmt.Println("!!! Remember to copy the LICENSE across - https://raw.githubusercontent.com/golang/go/master/LICENSE")
 }
