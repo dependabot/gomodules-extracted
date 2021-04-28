@@ -1,3 +1,3 @@
 module github.com/dependabot/gomodules-extracted
 
-go 1.15
+go 1.16
