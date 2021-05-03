@@ -6,8 +6,8 @@
 package browser
 
 import (
+	exec "github.com/dependabot/gomodules-extracted/_internal_/execabs"
 	"os"
-	"os/exec"
 	"runtime"
 	"time"
 )

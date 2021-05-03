@@ -7,8 +7,8 @@
 package goroot
 
 import (
+	exec "github.com/dependabot/gomodules-extracted/_internal_/execabs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
