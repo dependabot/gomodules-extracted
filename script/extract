@@ -1,6 +1,6 @@
 #!/bin/sh
 
-(cd extract && go run .) && rsync -rcv extract/out/github.com/dependabot/gomodules-extracted/* .
+(cd extract && rm -rf ./out && go run .) && rm -rf ./_internal_ ./cmd && rsync -rcv extract/out/github.com/dependabot/gomodules-extracted/* .
 
 curl -sL https://raw.githubusercontent.com/golang/go/master/LICENSE | tee _internal_/LICENSE > cmd/LICENSE
 git add _internal_ cmd
