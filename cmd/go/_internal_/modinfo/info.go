@@ -22,6 +22,7 @@ type ModulePublic struct {
 	GoMod		string		`json:",omitempty"`	// path to go.mod file describing module, if any
 	GoVersion	string		`json:",omitempty"`	// go version used in module
 	Retracted	[]string	`json:",omitempty"`	// retraction information, if any (with -retracted or -u)
+	Deprecated	string		`json:",omitempty"`	// deprecation message, if any (with -u)
 	Error		*ModuleError	`json:",omitempty"`	// error loading module
 }
 
@@ -45,6 +46,9 @@ func (m *ModulePublic) String() string {
 			s += " [" + versionString(m.Update) + "]"
 		}
 	}
+	if m.Deprecated != "" {
+		s += " (deprecated)"
+	}
 	if m.Replace != nil {
 		s += " => " + m.Replace.Path
 		if m.Replace.Version != "" {
@@ -52,6 +56,9 @@ func (m *ModulePublic) String() string {
 			if m.Replace.Update != nil {
 				s += " [" + versionString(m.Replace.Update) + "]"
 			}
+		}
+		if m.Replace.Deprecated != "" {
+			s += " (deprecated)"
 		}
 	}
 	return s
