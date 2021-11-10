@@ -25,6 +25,4 @@ func main() {
 	if err := extractor.Run(); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("!!! Remember to copy the LICENSE across - https://raw.githubusercontent.com/golang/go/master/LICENSE")
 }
